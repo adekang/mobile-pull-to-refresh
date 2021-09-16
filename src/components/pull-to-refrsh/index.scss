@@ -1,0 +1,28 @@
+.container {
+  overflow: auto;
+  height: 100%;
+  touch-action: pan-y;
+
+  .body {
+    position: relative;
+    height: 100%;
+    transition-property: transform;
+    touch-action: pan-y;
+
+    .header {
+      background-color: peachpuff;
+      position: absolute;
+      left: 0;
+      width: 100%;
+      transform: translateY(-100%) translateZ(1px);
+    }
+  }
+}
+
+.rheader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}

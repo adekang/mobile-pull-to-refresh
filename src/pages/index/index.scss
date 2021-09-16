@@ -1,0 +1,15 @@
+.Fcontainer {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  .box {
+    height: 200px;
+    text-align: center;
+    border: 1px solid red;
+  }
+
+  .container {
+    flex: 1;
+  }
+}
