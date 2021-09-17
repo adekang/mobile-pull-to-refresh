@@ -53,6 +53,7 @@ export const PullDownStatus = {
   loading: 'loading', // 刷新中
   finish: 'finish', // 完成刷新
 };
+
 export const setAnimation = (style, {transform, transitionDuration}) => {
   style.transitionDuration = transitionDuration;
   style.webkitTransitionDuration = transitionDuration;

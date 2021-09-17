@@ -13,8 +13,8 @@ interface RefreshProps {
   duration?: number; // 动画时间
   stayTime?: number; // 延迟时间
   headerHeight?: number; // 头部加载的高度
-  loadMore?: () => void; // 加载更多
-  maxDistance?: number; // 最大限制距离
+  // loadMore?: () => void; // 加载更多
+  // maxDistance?: number; // 最大限制距离
   children;
 }
 
@@ -26,19 +26,20 @@ export default (props: RefreshProps) => {
     duration = 250,
     headerHeight = 56,
     stayTime = 300,
-    maxDistance = 3000,
+    // maxDistance = 3000,
     refresh
   } = props;
 
   const touch = useTouch();
   const wrapRef = useRef<HTMLElement>();
   const bodyRef = useRef<HTMLElement>();
-
   const [height, setHeight] = useState(0);
   const ptRefresh = useRef<string>();
   const isEdge = useRef<boolean>();
 
   ptRefresh.current = PullDownStatus.init;
+  const [sendStatus, setSendStatus] = useState<string>(PullDownStatus.init);
+
 
   const update = (headerHeight: number, status?: string) => {
     setHeight(headerHeight);
@@ -52,6 +53,7 @@ export default (props: RefreshProps) => {
         t = PullDownStatus.loosing;
       }
     }
+    setSendStatus(t);
     ptRefresh.current = t;
   };
 
@@ -66,6 +68,7 @@ export default (props: RefreshProps) => {
   const invokeRefresh = () => {
     refresh().then((res) => {
       update(headerHeight, PullDownStatus.finish);
+
       setTimeout(() => {
         update(0);
       }, stayTime);
@@ -168,7 +171,7 @@ export default (props: RefreshProps) => {
     <View className="container" ref={wrapRef} style={style}>
       <View className="body" ref={bodyRef}>
         <View className="header" style={{height: headerHeight + 'px'}}>
-          <RHeader status={ptRefresh.current}/>
+          <RHeader status={sendStatus}/>
         </View>
         <View className="children">{children}</View>
       </View>
