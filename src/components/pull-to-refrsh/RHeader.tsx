@@ -9,10 +9,10 @@ const areEqual = (prevProps, nextProps) => {
 };
 
 const textMap = {
-  init: '下拉可以刷新', // 未下拉状态
+  init: '', // 未下拉状态
   pulling: '下拉可以刷新', // 下拉可以刷新
   loosing: '松开可以刷新', // 释放可以刷新
-  loading: <AtActivityIndicator content="加载中..." color="#13CE66"/>, // 刷新中
+  loading: <AtActivityIndicator content="加载中..." color="#ffce00"/>, // 刷新中
   finish: '刷新完成', // 完成刷新
 };
 
@@ -20,7 +20,7 @@ const RHeader = (props) => {
   const status = props.status;
   for (let key in textMap) {
     if (status === key) {
-      return <View className="textMap">{textMap[key]}</View>;
+      return <View className="yzy-pullToRefresh-textMap">{textMap[key]}</View>;
     }
   }
 };

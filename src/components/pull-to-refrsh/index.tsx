@@ -2,7 +2,7 @@
 import React, {memo, useEffect, useRef, useState} from 'react';
 import './index.scss';
 import {View} from '@tarojs/components';
-import {bindEvents, PullDownStatus, setAnimation, unbindEvents, isShallowEqual} from './util';
+import {bindEvents, PullDownStatus, setAnimation, unbindEvents} from './util';
 import useTouch from '../../hooks/useTouch';
 import RHeader from './RHeader';
 
@@ -10,11 +10,10 @@ interface RefreshProps {
   style?: any; // 自定义的样式
   distanceToRefresh?: number; // 触发刷新的距离
   refresh: () => Promise<any>; // 刷新的函数
-  duration?: number; // 动画时间
-  stayTime?: number; // 延迟时间
+  duration?: number; // 下拉动画时间
+  stayTime?: number; // loading加载时间
   headerHeight?: number; // 头部加载的高度
   // loadMore?: () => void; // 加载更多
-  // maxDistance?: number; // 最大限制距离
   children;
 }
 
@@ -23,10 +22,9 @@ export default (props: RefreshProps) => {
     children,
     style = {},
     distanceToRefresh = 56,
-    duration = 250,
+    duration = 100,
     headerHeight = 56,
     stayTime = 300,
-    // maxDistance = 3000,
     refresh
   } = props;
 
@@ -40,14 +38,13 @@ export default (props: RefreshProps) => {
   ptRefresh.current = PullDownStatus.init;
   const [sendStatus, setSendStatus] = useState<string>(PullDownStatus.init);
 
-
-  const update = (headerHeight: number, status?: string) => {
-    setHeight(headerHeight);
+  const update = (distanceY: number, status?: string) => {
+    setHeight(distanceY);
     let t = status;
     if (!t) {
-      if (headerHeight === 0) {
+      if (distanceY === 0) {
         t = PullDownStatus.init;
-      } else if (headerHeight < distanceToRefresh) {
+      } else if (distanceY < distanceToRefresh) {
         t = PullDownStatus.pulling;
       } else {
         t = PullDownStatus.loosing;
@@ -68,11 +65,9 @@ export default (props: RefreshProps) => {
   const invokeRefresh = () => {
     refresh().then((res) => {
       update(headerHeight, PullDownStatus.finish);
-
       setTimeout(() => {
         update(0);
       }, stayTime);
-      console.log(res);
     });
   };
 
@@ -82,7 +77,6 @@ export default (props: RefreshProps) => {
       ptRefresh.current !== PullDownStatus.finish
     );
   };
-
 
   const checkIsEdge = () => {
     // iOS下 scrollTop 会出现bounce，导致出现负值
@@ -114,6 +108,7 @@ export default (props: RefreshProps) => {
         touch.start(e);
       }
     }
+
     touch.move(e);
     if (touch.offsetX.current > 20 * window.devicePixelRatio) {
       return;
@@ -159,21 +154,19 @@ export default (props: RefreshProps) => {
   };
 
   useEffect(() => {
-    console.log('执行了');
     init();
     return () => {
-      console.log('销毁了');
       destroy();
     };
   }, []);
 
   return (
-    <View className="container" ref={wrapRef} style={style}>
-      <View className="body" ref={bodyRef}>
-        <View className="header" style={{height: headerHeight + 'px'}}>
+    <View className="yzy-pullToRefresh-container" ref={wrapRef} style={style}>
+      <View className="yzy-pullToRefresh-body" ref={bodyRef}>
+        <View className="yzy-pullToRefresh-header" style={{height: headerHeight + 'px'}}>
           <RHeader status={sendStatus}/>
         </View>
-        <View className="children">{children}</View>
+        <View className="yzy-pullToRefresh-children">{children}</View>
       </View>
     </View>
   );
