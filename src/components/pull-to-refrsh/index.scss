@@ -15,13 +15,24 @@
       width: 100%;
       transform: translateY(-100%) translateZ(1px);
 
+
       .yzy-pullToRefresh-textMap {
         display: flex;
         justify-content: center;
         align-items: center;
         width: 100%;
         height: 100%;
-        font-size: 30px;
+        font-size: 24px;
+
+        .loading-box {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          .loading-text {
+            margin-left: 12px;
+          }
+        }
       }
     }
   }
