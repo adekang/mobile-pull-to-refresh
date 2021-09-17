@@ -2,7 +2,7 @@
 import React, {memo, useEffect, useRef, useState} from 'react';
 import './index.scss';
 import {View} from '@tarojs/components';
-import {bindEvents, PullDownStatus, setAnimation, unbindEvents} from './util';
+import {bindEvents, PullDownStatus, setAnimation, unbindEvents, isShallowEqual} from './util';
 import useTouch from '../../hooks/useTouch';
 import RHeader from './RHeader';
 
@@ -35,12 +35,13 @@ export default (props: RefreshProps) => {
   const bodyRef = useRef<HTMLElement>();
 
   const [height, setHeight] = useState(0);
-  const [ptRefresh, setPtRefresh] = useState(PullDownStatus.init);
+  const ptRefresh = useRef<string>();
+  const isEdge = useRef<boolean>();
+
+  ptRefresh.current = PullDownStatus.init;
 
   const update = (headerHeight: number, status?: string) => {
     setHeight(headerHeight);
-    console.log('update-1', status);
-    console.log('update-2', headerHeight);
     let t = status;
     if (!t) {
       if (headerHeight === 0) {
@@ -51,80 +52,75 @@ export default (props: RefreshProps) => {
         t = PullDownStatus.loosing;
       }
     }
-    console.log('update-3', t);
-    setPtRefresh(t);
-    console.log('update-4', ptRefresh);
+    ptRefresh.current = t;
   };
 
   useEffect(() => {
-    console.log('ptRefresh-1', ptRefresh);
     setAnimation(bodyRef.current.style, {
       transitionDuration: `${duration}ms`,
       transform: `translate3d(0px,${height}px,1px)`
     });
-  }, [ptRefresh]);
+  }, [height]);
+
 
   const invokeRefresh = () => {
-    refresh().then(() => {
+    refresh().then((res) => {
       update(headerHeight, PullDownStatus.finish);
       setTimeout(() => {
         update(0);
       }, stayTime);
+      console.log(res);
     });
   };
+
   const canRefresh = () => {
     return (
-      ptRefresh !== PullDownStatus.loading &&
-      ptRefresh !== PullDownStatus.finish
+      ptRefresh.current !== PullDownStatus.loading &&
+      ptRefresh.current !== PullDownStatus.finish
     );
   };
 
 
   const checkIsEdge = () => {
     // iOS下 scrollTop 会出现bounce，导致出现负值
-    return Math.max(wrapRef?.current?.scrollTop, 0) === 0;
+    isEdge.current = Math.max(wrapRef?.current?.scrollTop, 0) === 0;
+    return isEdge.current;
   };
 
   const ease = (distanceY: number) => {
-    let _dy = distanceY;
-    if (_dy > distanceToRefresh) {
-      if (_dy < distanceToRefresh * 2) {
-        _dy = distanceToRefresh + (_dy - distanceToRefresh) / 2;
-      } else {
-        _dy = distanceToRefresh * 1.5 + (_dy - distanceToRefresh * 2) / 4;
-      }
-    }
-
-    return Math.min(maxDistance, Math.round(_dy));
+    const availHeight = window.screen.availHeight;
+    return (availHeight / 2.5) * Math.sin(distanceY / availHeight * (Math.PI / 2));
   };
 
   const onTouchStart = e => {
     if (!canRefresh()) {
       return;
     }
-    if (!checkIsEdge()) {
+    if (checkIsEdge()) {
       touch.start(e);
     }
   };
+
+
   const onTouchMove = e => {
     if (!canRefresh()) {
       return;
     }
-    if (!checkIsEdge()) {
-      touch.start(e);
+    if (!isEdge.current) {
+      if (checkIsEdge()) {
+        touch.start(e);
+      }
     }
-
     touch.move(e);
-    if (Math.abs(touch.offsetX.current) > 20 * window.devicePixelRatio) {
+    if (touch.offsetX.current > 20 * window.devicePixelRatio) {
       return;
     }
 
-    if (touch.offsetY.current >= 0) {
+    if (touch.deltaY.current >= 0 && wrapRef.current.scrollTop <= 0) {
       if (e.cancelable) {
         e.preventDefault();
       }
       const distanceY = ease(touch.offsetY.current);
-      console.log('onTouchMove-1', distanceY);
       update(distanceY);
     }
   };
@@ -133,11 +129,8 @@ export default (props: RefreshProps) => {
     if (!canRefresh()) {
       return;
     }
-
     if (touch.offsetY.current) {
-      console.log('onTouchEnd-2', ptRefresh);
-      if (ptRefresh === PullDownStatus.loosing) {
-        console.log('onTouchEnd------------------------进来了');
+      if (ptRefresh.current === PullDownStatus.loosing) {
         update(headerHeight, PullDownStatus.loading);
         invokeRefresh();
         touch.reset();
@@ -175,7 +168,7 @@ export default (props: RefreshProps) => {
     <View className="container" ref={wrapRef} style={style}>
       <View className="body" ref={bodyRef}>
         <View className="header" style={{height: headerHeight + 'px'}}>
-          <RHeader status={ptRefresh}/>
+          <RHeader status={ptRefresh.current}/>
         </View>
         <View className="children">{children}</View>
       </View>

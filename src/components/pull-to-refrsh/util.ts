@@ -63,3 +63,9 @@ export const setAnimation = (style, {transform, transitionDuration}) => {
   style.MozTransform = transform;
 };
 
+export const isShallowEqual = (a, b) => {
+  return Object.keys(a).every((key) => {
+    if (a[key] instanceof Function && b[key] instanceof Function) return true;
+    return a[key] === b[key];
+  });
+};

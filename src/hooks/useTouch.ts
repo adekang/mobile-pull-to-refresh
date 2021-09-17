@@ -37,9 +37,7 @@ export default () => {
   };
 
   const start = ((event: TouchEvent) => {
-    // reset();
-    deltaX.current = 0;
-    deltaY.current = 0;
+    reset();
     startX.current = event.touches[0].clientX;
     startY.current = event.touches[0].clientY;
   }) as EventListener;
