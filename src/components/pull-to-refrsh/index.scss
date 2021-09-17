@@ -1,21 +1,21 @@
-.container {
+.yzy-pullToRefresh-container {
   overflow: auto;
   height: 100%;
   touch-action: pan-y;
 
-  .body {
+  .yzy-pullToRefresh-body {
     position: relative;
     height: 100%;
     transition-property: transform;
     touch-action: pan-y;
 
-    .header {
+    .yzy-pullToRefresh-header {
       position: absolute;
       left: 0;
       width: 100%;
       transform: translateY(-100%) translateZ(1px);
 
-      .textMap {
+      .yzy-pullToRefresh-textMap {
         display: flex;
         justify-content: center;
         align-items: center;
