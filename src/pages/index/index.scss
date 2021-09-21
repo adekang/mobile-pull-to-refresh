@@ -4,8 +4,37 @@
   flex-direction: column;
 
   .box {
-    height: 200px;
+    height: 400px;
     text-align: center;
+
+    .circle {
+      fill: none;
+      stroke: #7C83FD;
+      stroke-width: 4;
+      stroke-dasharray: 314;
+      stroke-dashoffset: 314;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: circle 3s infinite;
+      transition: all 1s;
+      stroke-linecap: round;
+      color: red;
+
+      .text {
+        font-size: 20px;
+      }
+
+      .percent {
+        font-size: 10px;
+      }
+    }
+
+    @keyframes circle {
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
   }
 
   .container {

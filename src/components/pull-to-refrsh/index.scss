@@ -14,7 +14,16 @@
       left: 0;
       width: 100%;
       transform: translateY(-100%) translateZ(1px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
+      .yzy-pullToRefresh-svg {
+        circle {
+          -webkit-transition: stroke-dashoffset .25s;
+          transition: stroke-dashoffset .25s;
+        }
+      }
 
       .yzy-pullToRefresh-textMap {
         display: flex;

@@ -49,15 +49,19 @@ const Index = () => {
   const refresh = () => {
     return get(1);
   };
-
   return (
     <div className="FContainer">
-      <div className="box">123</div>
+      <div className="box">
+        123
+      </div>
+
+
       <PullRefresh
         refresh={refresh}
         distanceToRefresh={56}
         headerHeight={56}
         stayTime={300}
+        loadColor="#ffce03"
       >
         {list.map(index => (
           <RowRender index={index} key={index}/>
