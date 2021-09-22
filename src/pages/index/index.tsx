@@ -2,6 +2,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import PullRefresh from '../../components/pull-to-refrsh';
 import './index.scss';
+// @ts-ignore
+import yzy from '../../images/yzy.png';
+import {Image} from '@tarojs/components';
 
 const RowRender = props => {
   const {index} = props;
@@ -49,6 +52,8 @@ const Index = () => {
   const refresh = () => {
     return get(1);
   };
+
+  const loadText = <Image src={yzy} className="loadingText"/>;
   return (
     <div className="FContainer">
       <div className="box">
@@ -62,6 +67,7 @@ const Index = () => {
         headerHeight={56}
         stayTime={300}
         loadColor="#ffce03"
+        loadText={loadText}
       >
         {list.map(index => (
           <RowRender index={index} key={index}/>

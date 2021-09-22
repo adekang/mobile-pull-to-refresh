@@ -4,7 +4,8 @@ import './index.scss';
 import {View} from '@tarojs/components';
 import {bindEvents, PullDownStatus, setAnimation, unbindEvents} from './util';
 import useTouch from '../../hooks/useTouch';
-import RHeader from './RHeader';
+
+// import RHeader from './RHeader';
 
 interface RefreshProps {
   style?: any; // 自定义container的样式
@@ -13,9 +14,10 @@ interface RefreshProps {
   duration?: number; // 下拉动画时间
   stayTime?: number; // loading加载时间
   headerHeight?: number; // 头部加载的高度
-  radius?: number,  // 圆的大小 最好 24
-  stroke?: number,  // 边框大小
-  loadColor?: string
+  radius?: number,  // loading的大小 最好 24
+  stroke?: number,  // border大小
+  loadColor?: string // border color
+  loadText?: any  // loading 文字 或图
   children;
 }
 
@@ -160,16 +162,13 @@ export default (props: RefreshProps) => {
     };
   }, []);
 
-  const {radius = 25, stroke = 4, loadColor} = props;
-  let [progress, setProgress] = useState(0);
+  const {radius = 25, stroke = 4, loadColor, loadText = '...'} = props;
+  const [progress, setProgress] = useState(0);
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - progress / 100 * circumference;
+
   useEffect(() => {
-    let i = 0;
-    if (height === 56) {
-      i += 1;
-    }
     if (height === 0) {
       setProgress(item => item = 0);
     }
@@ -178,7 +177,6 @@ export default (props: RefreshProps) => {
       setProgress(item => item = 100);
       return;
     }
-
   }, [height]);
 
 
@@ -203,6 +201,7 @@ export default (props: RefreshProps) => {
               cy={radius}
             />
           </svg>
+          <View className="yzy-pullToRefresh-svg-box">{loadText}</View>
         </View>
         <View className="yzy-pullToRefresh-children">{children}</View>
       </View>
