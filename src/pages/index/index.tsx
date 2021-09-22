@@ -6,7 +6,7 @@ import './index.scss';
 import yzy from '../../images/yzy.png';
 import {Image} from '@tarojs/components';
 
-const RowRender = props => {
+const RowRender = (props: { index: any; }) => {
   const {index} = props;
   return (
     <div
@@ -35,14 +35,16 @@ const Index = () => {
   useEffect(() => {
     get(1);
   }, []);
-  const get = pageNum => {
+  const get = (pageNum: number) => {
     return new Promise(resolve => {
       setTimeout(() => {
         const newList = new Array(pageNumber)
           .fill(true)
           .map((item, index) => index + 1);
+        // @ts-ignore
         setList(pageNumber === 1 ? newList : list.concat(newList));
         setPageNumber(pageNumber += pageNum);
+        // @ts-ignore
         page.current += 1;
         resolve('ok');
       }, 800);

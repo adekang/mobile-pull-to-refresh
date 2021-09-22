@@ -1,4 +1,3 @@
-// @ts-ignore
 import React, {memo, useEffect, useRef, useState} from 'react';
 import './index.scss';
 import {View} from '@tarojs/components';
@@ -18,7 +17,7 @@ interface RefreshProps {
   stroke?: number,  // border大小
   loadColor?: string // border color
   loadText?: any  // loading 文字 或图
-  children;
+  children: any;
 }
 
 export default (props: RefreshProps) => {
@@ -59,7 +58,7 @@ export default (props: RefreshProps) => {
   };
 
   useEffect(() => {
-    setAnimation(bodyRef.current.style, {
+    setAnimation(bodyRef?.current?.style, {
       transitionDuration: `${duration}ms`,
       transform: `translate3d(0px,${height}px,1px)`
     });
@@ -84,7 +83,7 @@ export default (props: RefreshProps) => {
 
   const checkIsIos = () => {
     // iOS下 scrollTop 会出现bounce，导致出现负值
-    isIos.current = Math.max(wrapRef?.current?.scrollTop, 0) === 0;
+    isIos.current = Math.max(wrapRef?.current?.scrollTop as number, 0) === 0;
     return isIos.current;
   };
 
@@ -93,7 +92,7 @@ export default (props: RefreshProps) => {
     return (availHeight / 2.5) * Math.sin(distanceY / availHeight * (Math.PI / 2));
   };
 
-  const onTouchStart = e => {
+  const onTouchStart = (e: Event) => {
     if (!canRefresh()) {
       return;
     }
@@ -102,7 +101,7 @@ export default (props: RefreshProps) => {
     }
   };
 
-  const onTouchMove = e => {
+  const onTouchMove = (e: Event) => {
     if (!canRefresh()) {
       return;
     }
@@ -116,7 +115,7 @@ export default (props: RefreshProps) => {
       return;
     }
 
-    if (touch.deltaY.current >= 0 && wrapRef.current.scrollTop <= 0) {
+    if (touch.deltaY.current >= 0 && wrapRef.current && wrapRef.current.scrollTop <= 0) {
       if (e.cancelable) {
         e.preventDefault();
       }
@@ -148,11 +147,11 @@ export default (props: RefreshProps) => {
   };
 
   const init = () => {
-    bindEvents(bodyRef.current, bodyRefEvents);
+    if (bodyRef.current) {bindEvents(bodyRef.current, bodyRefEvents);}
   };
 
   const destroy = () => {
-    unbindEvents(bodyRef.current, bodyRefEvents);
+    if (bodyRef.current) {unbindEvents(bodyRef.current, bodyRefEvents);}
   };
 
   useEffect(() => {
