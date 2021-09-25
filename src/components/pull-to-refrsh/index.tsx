@@ -1,31 +1,25 @@
-import React, {memo, useEffect, useRef, useState} from 'react';
-import './index.scss';
-import {View} from '@tarojs/components';
-import {bindEvents, PullDownStatus, setAnimation, unbindEvents} from './util';
-import useTouch from '../../hooks/useTouch';
-
-// import RHeader from './RHeader';
+import React, { useEffect, useRef, useState } from "react";
+import "./index.scss";
+import { View } from "@tarojs/components";
+import { bindEvents, PullDownStatus, setAnimation, unbindEvents } from "./util";
+import useTouch from "@/hooks/useTouch";
 
 interface RefreshProps {
-  style?: any; // 自定义container的样式
   distanceToRefresh?: number; // 触发刷新的距离
-  refresh: () => Promise<any>; // 刷新的函数
-  duration?: number; // 下拉动画时间
+  refresh: () => void; // 刷新的函数
   stayTime?: number; // loading加载时间
   headerHeight?: number; // 头部加载的高度
-  radius?: number,  // loading的大小 最好 24
-  stroke?: number,  // border大小
-  loadColor?: string // border color
-  loadText?: any  // loading 文字 或图
+  radius?: number; // loading的大小 最好 24
+  stroke?: number; // border大小
+  loadColor?: string; // border color
+  loadText?: any; // loading 文字 或图
   children: any;
 }
 
 export default (props: RefreshProps) => {
   const {
     children,
-    style = {},
     distanceToRefresh = 56,
-    duration = 100, // 100ms过渡最佳
     headerHeight = 56,
     stayTime = 300,
     refresh
@@ -36,11 +30,14 @@ export default (props: RefreshProps) => {
   const bodyRef = useRef<HTMLElement>();
   const [height, setHeight] = useState(0);
   const ptRefresh = useRef<string>();
-  const isIos = useRef<boolean>();
+  const isEdge = useRef<boolean>();
+  const moveX = useRef<number>();
+  const wrapRefTop = useRef<number>();
 
   ptRefresh.current = PullDownStatus.init;
-  const [sendStatus, setSendStatus] = useState<string>(PullDownStatus.init);
+  const [, setSendStatus] = useState<string>(PullDownStatus.init);
 
+  // 状态改变函数
   const update = (distanceY: number, status?: string) => {
     setHeight(distanceY);
     let t = status;
@@ -58,20 +55,19 @@ export default (props: RefreshProps) => {
   };
 
   useEffect(() => {
-    setAnimation(bodyRef?.current?.style, {
+    const duration = 100;
+    setAnimation(bodyRef.current?.style, {
       transitionDuration: `${duration}ms`,
       transform: `translate3d(0px,${height}px,1px)`
     });
   }, [height]);
 
-
   const invokeRefresh = () => {
-    refresh().then((res) => {
-      update(headerHeight, PullDownStatus.finish);
-      setTimeout(() => {
-        update(0);
-      }, stayTime);
-    }).catch((e) => {});
+    refresh();
+    update(headerHeight, PullDownStatus.finish);
+    setTimeout(() => {
+      update(0);
+    }, stayTime);
   };
 
   const canRefresh = () => {
@@ -81,32 +77,43 @@ export default (props: RefreshProps) => {
     );
   };
 
-  const checkIsIos = () => {
+  const checkIsEdge = () => {
     // iOS下 scrollTop 会出现bounce，导致出现负值
-    isIos.current = Math.max(wrapRef?.current?.scrollTop as number, 0) === 0;
-    return isIos.current;
+    isEdge.current = Math.max(wrapRef?.current?.scrollTop as number, 0) === 0;
+    return isEdge.current;
   };
 
   const ease = (distanceY: number) => {
     const availHeight = window.screen.availHeight;
-    return (availHeight / 2.5) * Math.sin(distanceY / availHeight * (Math.PI / 2));
+    return (
+      (availHeight / 2.5) * Math.sin((distanceY / availHeight) * (Math.PI / 2))
+    );
   };
 
   const onTouchStart = (e: Event) => {
     if (!canRefresh()) {
       return;
     }
-    if (checkIsIos()) {
+    if (checkIsEdge()) {
       touch.start(e);
     }
   };
 
-  const onTouchMove = (e: Event) => {
+  useEffect(() => {
+    wrapRefTop.current = wrapRef.current?.getBoundingClientRect().top;
+  }, []);
+
+  const onTouchMove = (e: TouchEvent, ele: HTMLElement) => {
     if (!canRefresh()) {
       return;
     }
-    if (!isIos.current) {
-      if (checkIsIos()) {
+    if (
+      (wrapRefTop.current as number) >
+      (wrapRef.current?.getBoundingClientRect().top as number)
+    )
+      return;
+    if (!isEdge.current) {
+      if (checkIsEdge()) {
         touch.start(e);
       }
     }
@@ -115,7 +122,10 @@ export default (props: RefreshProps) => {
       return;
     }
 
-    if (touch.deltaY.current >= 0 && wrapRef.current && wrapRef.current.scrollTop <= 0) {
+    moveX.current = e.touches[0].clientY;
+
+    if (touch.startY.current > moveX.current) return;
+    if (touch.deltaY.current >= 0) {
       if (e.cancelable) {
         e.preventDefault();
       }
@@ -147,11 +157,15 @@ export default (props: RefreshProps) => {
   };
 
   const init = () => {
-    if (bodyRef.current) {bindEvents(bodyRef.current, bodyRefEvents);}
+    if (bodyRef.current) {
+      bindEvents(bodyRef.current, bodyRefEvents);
+    }
   };
 
   const destroy = () => {
-    if (bodyRef.current) {unbindEvents(bodyRef.current, bodyRefEvents);}
+    if (bodyRef.current) {
+      unbindEvents(bodyRef.current, bodyRefEvents);
+    }
   };
 
   useEffect(() => {
@@ -161,29 +175,31 @@ export default (props: RefreshProps) => {
     };
   }, []);
 
-  const {radius = 25, stroke = 4, loadColor, loadText = '...'} = props;
+  // 控制圆圈效果
+  const { radius = 25, stroke = 4, loadColor, loadText = "..." } = props;
   const [progress, setProgress] = useState(0);
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDashoffset = circumference - progress / 100 * circumference;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   useEffect(() => {
     if (height === 0) {
-      setProgress(item => item = 0);
+      setProgress(item => (item = 0));
     }
-    setProgress(item => item = height);
+    setProgress(item => (item = height));
     if (height > 100 || height === 56) {
-      setProgress(item => item = 100);
+      setProgress(item => (item = 100));
       return;
     }
   }, [height]);
 
-
   return (
-    <View className="yzy-pullToRefresh-container" ref={wrapRef} style={style}>
+    <View className="yzy-pullToRefresh-container" ref={wrapRef}>
       <View className="yzy-pullToRefresh-body" ref={bodyRef}>
-        <View className="yzy-pullToRefresh-header" style={{height: headerHeight + 'px'}}>
-          {/*<RHeader status={sendStatus}/>*/}
+        <View
+          className="yzy-pullToRefresh-header"
+          style={{ height: headerHeight + "px" }}
+        >
           <svg
             height={radius * 2}
             width={radius * 2}
@@ -193,7 +209,7 @@ export default (props: RefreshProps) => {
               stroke={loadColor}
               fill="none"
               strokeWidth={stroke}
-              strokeDasharray={circumference + ' ' + circumference}
+              strokeDasharray={circumference + " " + circumference}
               strokeDashoffset={strokeDashoffset}
               r={normalizedRadius}
               cx={radius}
