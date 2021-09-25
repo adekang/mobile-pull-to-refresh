@@ -56,6 +56,7 @@ const Index = () => {
   };
 
   const loadText = <Image src={yzy} className="loadingText"/>;
+
   return (
     <div className="FContainer">
       <div className="box">
