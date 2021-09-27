@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import "./index.scss";
 import { View } from "@tarojs/components";
 import { bindEvents, PullDownStatus, setAnimation, unbindEvents } from "./util";
-import useTouch from "@/hooks/useTouch";
+import useTouch from "../../hooks/useTouch";
+import { usePageScroll, usePullDownRefresh } from "@tarojs/taro";
 
 interface RefreshProps {
   distanceToRefresh?: number; // 触发刷新的距离
@@ -99,6 +100,14 @@ export default (props: RefreshProps) => {
     }
   };
 
+  usePageScroll(res => {
+    // wrapRefTop.current = res.scrollTop;
+    console.log(res.scrollTop);
+  });
+  usePullDownRefresh(() => {
+    console.log("onPullDownRefresh");
+  });
+  // 方法1
   useEffect(() => {
     wrapRefTop.current = wrapRef.current?.getBoundingClientRect().top;
   }, []);
@@ -107,16 +116,18 @@ export default (props: RefreshProps) => {
     if (!canRefresh()) {
       return;
     }
+    // 方法1
     if (
       (wrapRefTop.current as number) >
       (wrapRef.current?.getBoundingClientRect().top as number)
     )
-      return;
-    if (!isEdge.current) {
-      if (checkIsEdge()) {
-        touch.start(e);
+      if (!isEdge.current) {
+        // if (wrapRefTop.current !== 0) return;
+
+        if (checkIsEdge()) {
+          touch.start(e);
+        }
       }
-    }
     touch.move(e);
     if (touch.offsetX.current > 20 * window.devicePixelRatio) {
       return;

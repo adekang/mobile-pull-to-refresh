@@ -35,18 +35,15 @@ const Index = () => {
     get(1);
   }, []);
   const get = (pageNum: number) => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const newList = new Array(pageNumber)
-          .fill(true)
-          .map((item, index) => index + 1);
-        // @ts-ignore
-        setList(pageNumber === 1 ? newList : list.concat(newList));
-        setPageNumber((pageNumber += pageNum));
-        // @ts-ignore
-        page.current += 1;
-        resolve("ok");
-      }, 800);
+    setTimeout(() => {
+      const newList = new Array(pageNumber)
+        .fill(true)
+        .map((item, index) => index + 1);
+      // @ts-ignore
+      setList(pageNumber === 1 ? newList : list.concat(newList));
+      setPageNumber((pageNumber += pageNum));
+      // @ts-ignore
+      page.current += 1;
     });
   };
 
