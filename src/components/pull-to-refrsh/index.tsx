@@ -14,6 +14,7 @@ interface RefreshProps {
   loadColor?: string; // border color
   loadText?: any; // loading 文字 或图
   children: any;
+  isContainer: boolean; // 是否指在一个区域滑动
 }
 
 export default (props: RefreshProps) => {
@@ -22,7 +23,8 @@ export default (props: RefreshProps) => {
     distanceToRefresh = 56,
     headerHeight = 56,
     stayTime = 300,
-    refresh
+    refresh,
+    isContainer
   } = props;
 
   const touch = useTouch();
@@ -31,13 +33,11 @@ export default (props: RefreshProps) => {
   const [height, setHeight] = useState(0);
   const ptRefresh = useRef<string>();
   const isEdge = useRef<boolean>();
-  const moveX = useRef<number>();
-  const wrapRefTop = useRef<number>();
+  const wrapRefTop = useRef<number>(); // 首次加载wrapRef距离视口的高度
 
   ptRefresh.current = PullDownStatus.init;
   const [, setSendStatus] = useState<string>(PullDownStatus.init);
 
-  // 状态改变函数
   const update = (distanceY: number, status?: string) => {
     setHeight(distanceY);
     let t = status;
@@ -90,7 +90,7 @@ export default (props: RefreshProps) => {
     );
   };
 
-  const onTouchStart = (e: Event) => {
+  const onTouchStart = (e: TouchEvent) => {
     if (!canRefresh()) {
       return;
     }
@@ -103,7 +103,7 @@ export default (props: RefreshProps) => {
     wrapRefTop.current = wrapRef.current?.getBoundingClientRect().top;
   }, []);
 
-  const onTouchMove = (e: TouchEvent, ele: HTMLElement) => {
+  const onTouchMove = (e: TouchEvent) => {
     if (!canRefresh()) {
       return;
     }
@@ -121,10 +121,7 @@ export default (props: RefreshProps) => {
     if (touch.offsetX.current > 20 * window.devicePixelRatio) {
       return;
     }
-
-    moveX.current = e.touches[0].clientY;
-
-    if (touch.startY.current > moveX.current) return;
+    if (touch.startY.current > touch.moveY.current) return;
     if (touch.deltaY.current >= 0) {
       if (e.cancelable) {
         e.preventDefault();
@@ -168,15 +165,25 @@ export default (props: RefreshProps) => {
     }
   };
 
+  // 设置样式wrapRef的overflow
+  const isAuto = () => {
+    if (isContainer) {
+      wrapRef.current ? (wrapRef.current.style.overflow = "auto") : undefined;
+    } else {
+      wrapRef.current ? (wrapRef.current.style.overflow = "hidden") : undefined;
+    }
+  };
+
   useEffect(() => {
     init();
+    isAuto();
     return () => {
       destroy();
     };
   }, []);
 
   // 控制圆圈效果
-  const { radius = 25, stroke = 4, loadColor, loadText = "..." } = props;
+  const { radius = 25, stroke = 4, loadColor, loadText = "" } = props;
   const [progress, setProgress] = useState(0);
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;

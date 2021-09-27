@@ -1,5 +1,5 @@
 .yzy-pullToRefresh-container {
-  overflow: auto;
+  overflow: hidden;
   height: 100%;
   touch-action: pan-y;
 
@@ -21,8 +21,8 @@
       .yzy-pullToRefresh-svg {
         circle {
           stroke-linecap: round;
-          -webkit-transition: stroke-dashoffset .25s;
-          transition: stroke-dashoffset .25s;
+          -webkit-transition: stroke-dashoffset 0.25s;
+          transition: stroke-dashoffset 0.25s;
         }
       }
 
@@ -39,5 +39,3 @@
     }
   }
 }
-
-

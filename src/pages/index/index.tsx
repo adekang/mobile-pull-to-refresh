@@ -1,28 +1,27 @@
 // @ts-ignore
-import React, {useEffect, useRef, useState} from 'react';
-import PullRefresh from '../../components/pull-to-refrsh';
-import './index.scss';
+import React, { useEffect, useRef, useState } from "react";
+import PullRefresh from "../../components/pull-to-refrsh";
+import "./index.scss";
 // @ts-ignore
-import yzy from '../../images/yzy.png';
-import {Image} from '@tarojs/components';
+import yzy from "../../images/yzy.png";
+import { Image } from "@tarojs/components";
 
-const RowRender = (props: { index: any; }) => {
-  const {index} = props;
+const RowRender = (props: { index: any }) => {
+  const { index } = props;
   return (
     <div
       style={{
         height: 80,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'pink',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "pink"
       }}
     >
       {index}
     </div>
   );
 };
-
 
 const Index = () => {
   const [list, setList] = useState([]);
@@ -43,10 +42,10 @@ const Index = () => {
           .map((item, index) => index + 1);
         // @ts-ignore
         setList(pageNumber === 1 ? newList : list.concat(newList));
-        setPageNumber(pageNumber += pageNum);
+        setPageNumber((pageNumber += pageNum));
         // @ts-ignore
         page.current += 1;
-        resolve('ok');
+        resolve("ok");
       }, 800);
     });
   };
@@ -55,14 +54,11 @@ const Index = () => {
     return get(1);
   };
 
-  const loadText = <Image src={yzy} className="loadingText"/>;
+  const loadText = <Image src={yzy} className="loadingText" />;
 
   return (
     <div className="FContainer">
-      <div className="box">
-        123
-      </div>
-
+      <div className="box">123</div>
 
       <PullRefresh
         refresh={refresh}
@@ -71,9 +67,10 @@ const Index = () => {
         stayTime={300}
         loadColor="#ffce03"
         loadText={loadText}
+        isContainer={true}
       >
         {list.map(index => (
-          <RowRender index={index} key={index}/>
+          <RowRender index={index} key={index} />
         ))}
       </PullRefresh>
     </div>
