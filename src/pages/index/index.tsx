@@ -51,7 +51,6 @@ const Index = () => {
     return get(1);
   };
 
-  const loadText = <Image src={yzy} className="loadingText" />;
 
   return (
     <div className="FContainer">
@@ -63,7 +62,6 @@ const Index = () => {
         headerHeight={56}
         stayTime={300}
         loadColor="#ffce03"
-        loadText={loadText}
         isContainer={true}
       >
         {list.map(index => (
