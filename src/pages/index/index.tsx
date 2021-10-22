@@ -1,21 +1,21 @@
 // @ts-ignore
-import React, { useEffect, useRef, useState } from "react";
-import PullRefresh from "../../components/pull-to-refrsh";
-import "./index.scss";
+import React, {useEffect, useRef, useState} from 'react';
+import PullRefresh from '../../components/pull-to-refrsh';
+import './index.scss';
 // @ts-ignore
-import yzy from "../../images/yzy.png";
-import { Image } from "@tarojs/components";
+import yzy from '../../images/yzy.png';
+import {Image} from '@tarojs/components';
 
 const RowRender = (props: { index: any }) => {
-  const { index } = props;
+  const {index} = props;
   return (
     <div
       style={{
         height: 80,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "pink"
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'pink'
       }}
     >
       {index}
@@ -43,12 +43,12 @@ const Index = () => {
       setList(pageNumber === 1 ? newList : list.concat(newList));
       setPageNumber((pageNumber += pageNum));
       // @ts-ignore
-      page.current += 1;
+      page.current += 3;
     });
   };
 
   const refresh = () => {
-    return get(1);
+    return get(2);
   };
 
 
@@ -57,15 +57,14 @@ const Index = () => {
       <div className="box">123</div>
 
       <PullRefresh
-        refresh={refresh}
         distanceToRefresh={56}
-        headerHeight={56}
-        stayTime={300}
-        loadColor="#ffce03"
-        isContainer={true}
+        onRefresh={refresh}
+        getScrollContainer={false}
+        className="box"
+        loadColor="#330066"
       >
         {list.map(index => (
-          <RowRender index={index} key={index} />
+          <RowRender index={index} key={index}/>
         ))}
       </PullRefresh>
     </div>

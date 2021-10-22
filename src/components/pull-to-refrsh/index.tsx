@@ -1,159 +1,178 @@
-import React, { useEffect, useRef, useState } from "react";
-import "./index.scss";
-import { View } from "@tarojs/components";
-import { bindEvents, PullDownStatus, setAnimation, unbindEvents } from "./util";
-import useTouch from "../../hooks/useTouch";
-import { usePageScroll, usePullDownRefresh } from "@tarojs/taro";
+import React, {useRef, useEffect, useState} from 'react';
+import classNames from 'classnames';
+import './index.scss';
+import {View} from '@tarojs/components';
+import {bindEvents, unbindEvents} from './util';
+import useTouch from '../../hooks/useTouch';
 
-interface RefreshProps {
-  distanceToRefresh?: number; // 触发刷新的距离
-  refresh: () => void; // 刷新的函数
-  stayTime?: number; // loading加载时间
-  headerHeight?: number; // 头部加载的高度
-  radius?: number; // loading的大小 最好 24
-  stroke?: number; // border大小
-  loadColor?: string; // border color
-  loadText?: any; // loading 文字 或图
-  children: any;
-  isContainer: boolean; // 是否指在一个区域滑动
+
+const isWebView =
+  typeof navigator !== 'undefined' &&
+  /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(navigator.userAgent);
+
+function setTransform(nodeStyle: any, value: any) {
+  nodeStyle.transform = value;
+  nodeStyle.webkitTransform = value;
+  nodeStyle.MozTransform = value;
 }
 
-export default (props: RefreshProps) => {
-  const {
-    children,
-    distanceToRefresh = 56,
-    headerHeight = 56,
-    stayTime = 300,
-    refresh,
-    isContainer
-  } = props;
+interface Props {
+  distanceToRefresh: number;
+  onRefresh: () => void;
+  getScrollContainer: boolean;
+  children: any;
+  className: string;
+  loadColor: string;
+}
 
+const PullDownStatus = {
+  init: 'init', // 未下拉状态
+  pulling: 'pulling', // 下拉可以刷新
+  // loosing: 'loosing', // 释放可以刷新
+  loading: 'loading', // 刷新中
+  finish: 'finish', // 完成刷新
+};
+
+const PullToRefresh: React.FC<Props> = props => {
+  const {distanceToRefresh, onRefresh, children, getScrollContainer, className} = props;
+  const containerRef = useRef() as React.MutableRefObject<HTMLDivElement>;
+  const contentRef = useRef() as React.MutableRefObject<HTMLDivElement>;
   const touch = useTouch();
-  const wrapRef = useRef<HTMLElement>();
-  const bodyRef = useRef<HTMLElement>();
+  const dragOnEdge = useRef(false);
+  const ptRefresh = useRef<string>(PullDownStatus.init);
   const [height, setHeight] = useState(0);
-  const ptRefresh = useRef<string>();
-  const isEdge = useRef<boolean>();
-  const wrapRefTop = useRef<number>(); // 首次加载wrapRef距离视口的高度
 
-  ptRefresh.current = PullDownStatus.init;
-  const [, setSendStatus] = useState<string>(PullDownStatus.init);
+  // 活动距离设置
+  const easing = (dy: number) => {
+    const ratio = dy / window.screen.height;
+    dy *= (1 - ratio) * 0.6;
 
-  const update = (distanceY: number, status?: string) => {
-    setHeight(distanceY);
-    let t = status;
-    if (!t) {
-      if (distanceY === 0) {
-        t = PullDownStatus.init;
-      } else if (distanceY < distanceToRefresh) {
-        t = PullDownStatus.pulling;
+    return dy;
+  };
+
+  //  获得父级框架
+  const scrollContainer = () => {
+    return document.querySelector('.taro-tabbar__panel') || document.body;
+  };
+
+  const isEdge = (ele: Element) => {
+    const container = scrollContainer();
+    console.log(container.scrollTop);
+    //  如果时全屏滑动
+    if (container && container === document.body) {
+      // In chrome61 `document.body.scrollTop` is invalid
+      const scrollNode = document.scrollingElement ? document.scrollingElement : document.body;
+
+      return scrollNode.scrollTop <= 0;
+    }
+    // 是局部滑动
+    return ele.scrollTop <= 0;
+  };
+
+  //  滑动效果
+  const contentStyle = (dy: number) => {
+    if (contentRef.current) {
+      if (dy) {
+        setTransform(contentRef.current.style, `translate3d(0px,${dy}px,0)`);
       } else {
-        t = PullDownStatus.loosing;
+        setTransform(contentRef.current.style, '');
       }
     }
-    setSendStatus(t);
+  };
+
+  const reset = () => {
+    setHeight(0);
+    update(0);
+    contentStyle(0);
+  };
+
+  const triggerPullToRefresh = () => {
+    if (!dragOnEdge.current) {
+      ptRefresh.current = PullDownStatus.init;
+    } else {
+      ptRefresh.current = PullDownStatus.finish;
+      reset();
+    }
+  };
+
+  const update = (dy: number, status?: string) => {
+    let t = status;
+    if (!t) {
+      if (dy === 0) {
+        t = PullDownStatus.init;
+      } else if (dy < distanceToRefresh) {
+        t = PullDownStatus.pulling;
+      } else {
+        t = PullDownStatus.loading;
+      }
+    }
     ptRefresh.current = t;
   };
 
-  useEffect(() => {
-    const duration = 100;
-    setAnimation(bodyRef.current?.style, {
-      transitionDuration: `${duration}ms`,
-      transform: `translate3d(0px,${height}px,1px)`
-    });
-  }, [height]);
-
-  const invokeRefresh = () => {
-    refresh();
-    update(headerHeight, PullDownStatus.finish);
-    setTimeout(() => {
-      update(0);
-    }, stayTime);
-  };
-
-  const canRefresh = () => {
-    return (
-      ptRefresh.current !== PullDownStatus.loading &&
-      ptRefresh.current !== PullDownStatus.finish
-    );
-  };
-
-  const checkIsEdge = () => {
-    // iOS下 scrollTop 会出现bounce，导致出现负值
-    isEdge.current = Math.max(wrapRef?.current?.scrollTop as number, 0) === 0;
-    return isEdge.current;
-  };
-
-  const ease = (distanceY: number) => {
-    const availHeight = window.screen.availHeight;
-    return (
-      (availHeight / 2.5) * Math.sin((distanceY / availHeight) * (Math.PI / 2))
-    );
-  };
-
   const onTouchStart = (e: TouchEvent) => {
-    if (!canRefresh()) {
-      return;
-    }
-    if (checkIsEdge()) {
+    const ele = scrollContainer();
+    if (isEdge(ele)) {
       touch.start(e);
     }
   };
 
-  usePageScroll(res => {
-    // wrapRefTop.current = res.scrollTop;
-    console.log(res.scrollTop);
-  });
-  usePullDownRefresh(() => {
-    console.log("onPullDownRefresh");
-  });
-  // 方法1
-  useEffect(() => {
-    wrapRefTop.current = wrapRef.current?.getBoundingClientRect().top;
-  }, []);
-
   const onTouchMove = (e: TouchEvent) => {
-    if (!canRefresh()) {
-      return;
-    }
-    // 方法1
-    if (
-      (wrapRefTop.current as number) >
-      (wrapRef.current?.getBoundingClientRect().top as number)
-    )
-      if (!isEdge.current) {
-        // if (wrapRefTop.current !== 0) return;
+    //  控制header滑动距离
+    if (ptRefresh.current === 'loading') return;
 
-        if (checkIsEdge()) {
-          touch.start(e);
-        }
-      }
+    const ele = scrollContainer();
     touch.move(e);
-    if (touch.offsetX.current > 20 * window.devicePixelRatio) {
-      return;
-    }
+    if (touch.offsetX.current > 20 * window.devicePixelRatio) return;
+
     if (touch.startY.current > touch.moveY.current) return;
-    if (touch.deltaY.current >= 0) {
-      if (e.cancelable) {
-        e.preventDefault();
+
+    if (!ele) return;
+    console.log(isEdge(ele));
+
+    if (isEdge(ele)) {
+      if (!dragOnEdge.current) {
+        dragOnEdge.current = true;
       }
-      const distanceY = ease(touch.offsetY.current);
+
+      if (e.cancelable) {
+        e.preventDefault;
+      }
+
+      const distanceY = easing(touch.offsetY.current);
+      setHeight(distanceY);
+      contentStyle(distanceY);
       update(distanceY);
+
+      if (isWebView && e.changedTouches[0].clientY < 0) {
+        onTouchEnd();
+      }
     }
+  };
+  let canRefresh = false;
+
+  const invokeRefresh = () => {
+    let id: any = setTimeout(() => {
+      if (canRefresh) {
+        onRefresh();
+      }
+      canRefresh = false;
+      update(100, PullDownStatus.finish);
+      reset();
+      id = null;
+    }, 2000);
   };
 
   const onTouchEnd = () => {
-    if (!canRefresh()) {
-      return;
+    if (dragOnEdge.current) {
+      dragOnEdge.current = false;
     }
-    if (touch.offsetY.current) {
-      if (ptRefresh.current === PullDownStatus.loosing) {
-        update(headerHeight, PullDownStatus.loading);
-        invokeRefresh();
-        touch.reset();
-      } else {
-        update(0);
-      }
+    if (ptRefresh.current === 'loading') {
+      contentStyle(56);
+      canRefresh = true;
+      invokeRefresh();
+      touch.reset();
+    } else {
+      reset();
     }
   };
 
@@ -161,40 +180,33 @@ export default (props: RefreshProps) => {
     touchstart: onTouchStart,
     touchmove: onTouchMove,
     touchend: onTouchEnd,
-    touchcancel: onTouchEnd
+    touchcancel: onTouchEnd,
   };
 
-  const init = () => {
-    if (bodyRef.current) {
-      bindEvents(bodyRef.current, bodyRefEvents);
+  const init = (ele: Element | null) => {
+    if (ele) {
+      triggerPullToRefresh();
+      bindEvents(ele as HTMLElement, bodyRefEvents);
     }
   };
 
-  const destroy = () => {
-    if (bodyRef.current) {
-      unbindEvents(bodyRef.current, bodyRefEvents);
-    }
-  };
-
-  // 设置样式wrapRef的overflow
-  const isAuto = () => {
-    if (isContainer) {
-      wrapRef.current ? (wrapRef.current.style.overflow = "auto") : undefined;
-    } else {
-      wrapRef.current ? (wrapRef.current.style.overflow = "hidden") : undefined;
+  const destroy = (ele: Element | null) => {
+    if (ele) {
+      unbindEvents(ele as HTMLElement, bodyRefEvents);
     }
   };
 
   useEffect(() => {
-    init();
-    isAuto();
+    init(scrollContainer());
     return () => {
-      destroy();
+      destroy(scrollContainer());
     };
   }, []);
 
   // 控制圆圈效果
-  const { radius = 25, stroke = 4, loadColor, loadText = "" } = props;
+  const {loadColor} = props;
+  const radius = 25;
+  const stroke = 4;
   const [progress, setProgress] = useState(0);
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
@@ -211,33 +223,37 @@ export default (props: RefreshProps) => {
     }
   }, [height]);
 
+  const prefixCls = 'lu';
+  const cla = classNames(`${prefixCls}-content`, !dragOnEdge.current && `${prefixCls}-transition`);
   return (
-    <View className="yzy-pullToRefresh-container" ref={wrapRef}>
-      <View className="yzy-pullToRefresh-body" ref={bodyRef}>
-        <View
-          className="yzy-pullToRefresh-header"
-          style={{ height: headerHeight + "px" }}
-        >
-          <svg
-            height={radius * 2}
-            width={radius * 2}
-            className="yzy-pullToRefresh-svg"
-          >
-            <circle
-              stroke={loadColor}
-              fill="none"
-              strokeWidth={stroke}
-              strokeDasharray={circumference + " " + circumference}
-              strokeDashoffset={strokeDashoffset}
-              r={normalizedRadius}
-              cx={radius}
-              cy={radius}
-            />
-          </svg>
-          <View className="yzy-pullToRefresh-svg-box">{loadText}</View>
+    <View ref={containerRef} className={classNames(prefixCls, className, `${prefixCls}-down`)}>
+      <View className={`${prefixCls}-content-wrapper`}>
+        <View ref={contentRef} className={cla}>
+          <View className={`${prefixCls}-indicator`} style={{minHeight: distanceToRefresh + 'px'}}>
+            <svg
+              height={radius * 2}
+              width={radius * 2}
+              className="yzy-pullToRefresh-svg"
+            >
+              <circle
+                stroke={loadColor}
+                fill="none"
+                strokeWidth={stroke}
+                strokeDasharray={circumference + ' ' + circumference}
+                strokeDashoffset={strokeDashoffset}
+                r={normalizedRadius}
+                cx={radius}
+                cy={radius}
+              />
+            </svg>
+            {/*<div>{loadText()}</div>*/}
+          </View>
+          {children}
         </View>
-        <View className="yzy-pullToRefresh-children">{children}</View>
       </View>
     </View>
   );
 };
+
+export default PullToRefresh;
+

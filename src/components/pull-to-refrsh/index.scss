@@ -1,5 +1,4 @@
 .yzy-pullToRefresh-container {
-  overflow: hidden;
   height: 100%;
   touch-action: pan-y;
 
@@ -13,7 +12,7 @@
       position: absolute;
       left: 0;
       width: 100%;
-      transform: translateY(-100%) translateZ(1px);
+      transform: translateY(-100%);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -37,5 +36,50 @@
         text-align: center;
       }
     }
+  }
+}
+
+.lu {
+  &-content {
+    &-wrapper {
+      height: auto;
+      overflow: hidden;
+      position: relative;
+      background-color: pink;
+    }
+
+    transform-origin: left top 0px;
+  }
+
+  &-transition {
+    transition: transform 0.2s;
+  }
+
+  &-indicator {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+
+    .yzy-pullToRefresh-svg {
+      circle {
+        stroke-linecap: round;
+        -webkit-transition: stroke-dashoffset 0.25s;
+        transition: stroke-dashoffset 0.25s;
+      }
+    }
+
+  }
+
+  &-down .lu-indicator {
+    transform: translateY(-100%);
+  }
+
+  &-up .lu-indicator {
+    transform: translateY(-100%);
   }
 }
