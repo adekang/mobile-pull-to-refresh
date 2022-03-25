@@ -6,7 +6,6 @@ cd dist &&
 git init &&
 git add . &&
 git commit -m "update" &&
-git branch -M master &&
-git remote add origin git@github.com:adekang/mobile-pull-to-refresh-web.git &&
-git push -f -u origin master &&
+git branch -M gh-pages &&
+git push -f git@github.com:adekang/mobile-pull-to-refresh.git gh-pages &&
 cd -
